@@ -235,13 +235,18 @@ function getTransaksi() {
   
   for (let i = 1; i < data.length; i++) {
     if (data[i][0]) {
+      // Pastikan tanggal selalu string
+      let tanggal = data[i][1];
+      if (tanggal instanceof Date) {
+        tanggal = Utilities.formatDate(tanggal, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+      }
       result.push({
-        id: data[i][0],
-        tanggal: data[i][1],
-        namaBarang: data[i][2],
-        jumlah: data[i][3],
-        jenis: data[i][4],
-        user: data[i][5]
+        id: String(data[i][0]),
+        tanggal: String(tanggal),
+        namaBarang: String(data[i][2]),
+        jumlah: Number(data[i][3]),
+        jenis: String(data[i][4]),
+        user: String(data[i][5])
       });
     }
   }
@@ -340,13 +345,17 @@ function getPengajuan() {
   
   for (let i = 1; i < data.length; i++) {
     if (data[i][0]) {
+      let tanggal = data[i][1];
+      if (tanggal instanceof Date) {
+        tanggal = Utilities.formatDate(tanggal, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+      }
       result.push({
-        id: data[i][0],
-        tanggal: data[i][1],
-        namaBarang: data[i][2],
-        jumlah: data[i][3],
-        status: data[i][4],
-        user: data[i][5]
+        id: String(data[i][0]),
+        tanggal: String(tanggal),
+        namaBarang: String(data[i][2]),
+        jumlah: Number(data[i][3]),
+        status: String(data[i][4]),
+        user: String(data[i][5])
       });
     }
   }
