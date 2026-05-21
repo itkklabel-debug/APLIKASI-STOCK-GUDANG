@@ -1108,10 +1108,14 @@ function hapusBarang(id) {
 // ============================================================
 function loadTransaksi() {
   loadStok(); // refresh dropdowns
+  
+  // Load riwayat transaksi
+  const tbody = document.getElementById('tabelTransaksi');
+  tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Memuat data...</td></tr>';
+  
   google.script.run
     .withSuccessHandler(function(data) {
-      const tbody = document.getElementById('tabelTransaksi');
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada transaksi</td></tr>';
         return;
       }
@@ -1125,6 +1129,9 @@ function loadTransaksi() {
           '<td>' + t.user + '</td>' +
         '</tr>';
       }).join('');
+    })
+    .withFailureHandler(function(err) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Gagal memuat data: ' + err.message + '</td></tr>';
     })
     .getTransaksi();
 }
@@ -1145,7 +1152,8 @@ function prosesBarangMasuk() {
       if (result.success) {
         showToast(result.message);
         document.getElementById('trxMasukJumlah').value = '';
-        loadTransaksi();
+        document.getElementById('trxMasukBarang').value = '';
+        setTimeout(function() { loadTransaksi(); }, 500);
       } else {
         showToast(result.message, 'danger');
       }
@@ -1170,7 +1178,8 @@ function prosesBarangKeluar() {
       if (result.success) {
         showToast(result.message);
         document.getElementById('trxKeluarJumlah').value = '';
-        loadTransaksi();
+        document.getElementById('trxKeluarBarang').value = '';
+        setTimeout(function() { loadTransaksi(); }, 500);
       } else {
         showToast(result.message, 'danger');
       }
