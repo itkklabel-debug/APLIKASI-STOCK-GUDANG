@@ -500,11 +500,20 @@
             <h6 class="fw-bold mb-3"><i class="bi bi-upc-scan me-2"></i>Scanner</h6>
             <div id="qr-reader" style="width:100%;border-radius:12px;overflow:hidden;"></div>
             <button class="btn btn-primary-custom w-100 mt-3" onclick="startScanner()">
-              <i class="bi bi-camera me-1"></i>Mulai Scan
+              <i class="bi bi-camera me-1"></i>Mulai Scan Kamera
             </button>
             <button class="btn btn-outline-secondary w-100 mt-2" onclick="stopScanner()" style="border-radius:var(--btn-radius);">
               <i class="bi bi-stop-circle me-1"></i>Stop
             </button>
+            <hr class="my-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-keyboard me-2"></i>Input Manual</h6>
+            <div class="input-group">
+              <input type="text" id="manualBarcodeInput" class="form-control" placeholder="Ketik kode/nama barang...">
+              <button class="btn btn-primary-custom" onclick="manualSearch()" style="border-radius:0 var(--btn-radius) var(--btn-radius) 0;">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+            <small class="text-muted mt-1 d-block">Jika kamera tidak tersedia, ketik kode barcode atau nama barang secara manual.</small>
           </div>
         </div>
         <div class="col-md-6">
@@ -1197,13 +1206,30 @@ function startScanner() {
     html5QrCode = new Html5Qrcode("qr-reader");
   }
   
+  // Cek apakah running di iframe (GAS Web App)
+  const isInIframe = (window !== window.top);
+  
   html5QrCode.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: { width: 250, height: 250 } },
     onScanSuccess,
     onScanFailure
   ).catch(err => {
-    showToast('Gagal mengakses kamera: ' + err, 'danger');
+    let errorMsg = String(err);
+    if (errorMsg.includes('NotAllowedError') || errorMsg.includes('Permission denied')) {
+      if (isInIframe) {
+        showToast('Kamera diblokir oleh browser (iframe restriction). Gunakan Input Manual di bawah.', 'warning');
+        document.getElementById('scanResult').innerHTML = 
+          '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>' +
+          '<strong>Kamera tidak tersedia</strong><br>' +
+          '<small class="text-muted">Google Apps Script Web App berjalan dalam iframe sehingga akses kamera diblokir oleh browser. ' +
+          'Gunakan <strong>Input Manual</strong> di bawah scanner untuk mencari barang.</small>';
+      } else {
+        showToast('Izin kamera ditolak. Silakan izinkan akses kamera di browser Anda, atau gunakan Input Manual.', 'warning');
+      }
+    } else {
+      showToast('Gagal mengakses kamera: ' + errorMsg + '. Gunakan Input Manual.', 'danger');
+    }
   });
 }
 
@@ -1214,6 +1240,25 @@ function stopScanner() {
     });
   }
 }
+
+function manualSearch() {
+  const input = document.getElementById('manualBarcodeInput').value.trim();
+  if (!input) {
+    showToast('Ketik kode atau nama barang terlebih dahulu!', 'warning');
+    return;
+  }
+  onScanSuccess(input);
+}
+
+// Enter key pada input manual
+document.addEventListener('DOMContentLoaded', function() {
+  var manualInput = document.getElementById('manualBarcodeInput');
+  if (manualInput) {
+    manualInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') manualSearch();
+    });
+  }
+});
 
 function onScanSuccess(decodedText) {
   document.getElementById('scanResult').innerHTML = 
@@ -1232,8 +1277,10 @@ function onScanSuccess(decodedText) {
     })
     .cariBarangByNama(decodedText);
   
-  // Stop scanner after success
-  stopScanner();
+  // Stop scanner after success (if running)
+  if (html5QrCode && html5QrCode.isScanning) {
+    stopScanner();
+  }
 }
 
 function onScanFailure(error) {
