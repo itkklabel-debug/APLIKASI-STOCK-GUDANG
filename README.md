@@ -1,0 +1,2 @@
+# APLIKASI-STOCK-GUDANG
+barangkkli
